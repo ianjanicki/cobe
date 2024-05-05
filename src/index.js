@@ -1,52 +1,104 @@
-import Phenomenon from 'phenomenon'
+import Phenomenon from 'phenomenon';
 
-const OPT_PHI = 'phi'
-const OPT_THETA = 'theta'
-const OPT_DOTS = 'mapSamples'
-const OPT_MAP_BRIGHTNESS = 'mapBrightness'
-const OPT_BASE_COLOR = 'baseColor'
-const OPT_MARKER_COLOR = 'markerColor'
-const OPT_GLOW_COLOR = 'glowColor'
-const OPT_MARKERS = 'markers'
-const OPT_DIFFUSE = 'diffuse'
-const OPT_DPR = 'devicePixelRatio'
-const OPT_DARK = 'dark'
-const OPT_OFFSET = 'offset'
-const OPT_SCALE = 'scale'
-const OPT_OPACITY = 'opacity'
-const OPT_MAP_BASE_BRIGHTNESS = 'mapBaseBrightness'
+const OPT_PHI = 'phi';
+const OPT_THETA = 'theta';
+const OPT_DOTS = 'mapSamples';
+const OPT_MAP_BRIGHTNESS = 'mapBrightness';
+const OPT_BASE_COLOR = 'baseColor';
+const OPT_MARKER_COLOR = 'markerColor';
+const OPT_GLOW_COLOR = 'glowColor';
+const OPT_MARKERS = 'markers';
+const OPT_DIFFUSE = 'diffuse';
+const OPT_DPR = 'devicePixelRatio';
+const OPT_DARK = 'dark';
+const OPT_OFFSET = 'offset';
+const OPT_SCALE = 'scale';
+const OPT_OPACITY = 'opacity';
+const OPT_MAP_BASE_BRIGHTNESS = 'mapBaseBrightness';
 
 const OPT_MAPPING = {
-  [OPT_PHI]: GLSLX_NAME_PHI,
-  [OPT_THETA]: GLSLX_NAME_THETA,
-  [OPT_DOTS]: GLSLX_NAME_DOTS,
-  [OPT_MAP_BRIGHTNESS]: GLSLX_NAME_DOTS_BRIGHTNESS,
-  [OPT_BASE_COLOR]: GLSLX_NAME_BASE_COLOR,
-  [OPT_MARKER_COLOR]: GLSLX_NAME_MARKER_COLOR,
-  [OPT_GLOW_COLOR]: GLSLX_NAME_GLOW_COLOR,
-  [OPT_DIFFUSE]: GLSLX_NAME_DIFFUSE,
-  [OPT_DARK]: GLSLX_NAME_DARK,
-  [OPT_OFFSET]: GLSLX_NAME_OFFSET,
-  [OPT_SCALE]: GLSLX_NAME_SCALE,
-  [OPT_OPACITY]: GLSLX_NAME_OPACITY,
-  [OPT_MAP_BASE_BRIGHTNESS]: GLSLX_NAME_MAP_BASE_BRIGHTNESS,
-}
+    [OPT_PHI]: GLSLX_NAME_PHI,
+    [OPT_THETA]: GLSLX_NAME_THETA,
+    [OPT_DOTS]: GLSLX_NAME_DOTS,
+    [OPT_MAP_BRIGHTNESS]: GLSLX_NAME_DOTS_BRIGHTNESS,
+    [OPT_BASE_COLOR]: GLSLX_NAME_BASE_COLOR,
+    [OPT_MARKER_COLOR]: GLSLX_NAME_MARKER_COLOR,
+    [OPT_GLOW_COLOR]: GLSLX_NAME_GLOW_COLOR,
+    [OPT_DIFFUSE]: GLSLX_NAME_DIFFUSE,
+    [OPT_DARK]: GLSLX_NAME_DARK,
+    [OPT_OFFSET]: GLSLX_NAME_OFFSET,
+    [OPT_SCALE]: GLSLX_NAME_SCALE,
+    [OPT_OPACITY]: GLSLX_NAME_OPACITY,
+    [OPT_MAP_BASE_BRIGHTNESS]: GLSLX_NAME_MAP_BASE_BRIGHTNESS,
+};
 
-const { PI, sin, cos } = Math
+const { PI, sin, cos } = Math;
 
 const mapMarkers = (markers) => {
-  return [].concat(
-    ...markers.map((m) => {
-      let [a, b] = m.location
-      a = (a * PI) / 180
-      b = (b * PI) / 180 - PI
-      const cx = cos(a)
-      return [-cx * cos(b), sin(a), cx * sin(b), m.size]
-    }),
-    // Make sure to fill zeros
-    [0, 0, 0, 0]
-  )
-}
+    return [].concat(
+        ...markers.map((m) => {
+            let [a, b] = m.location;
+            a = (a * PI) / 180;
+            b = (b * PI) / 180 - PI;
+            const cx = cos(a);
+            return [-cx * cos(b), sin(a), cx * sin(b), m.size];
+        }),
+        // Make sure to fill zeros
+        [0, 0, 0, 0]
+    );
+};
+
+// Generate random coordinates on Earth's landmass
+const generateRandomCoordinates = () => {
+    // This function generates random coordinates within the range of Earth's landmass
+    const minLatitude = -90;
+    const maxLatitude = 90;
+    const minLongitude = -180;
+    const maxLongitude = 180;
+
+    // Generate random latitude and longitude
+    const latitude = Math.random() * (maxLatitude - minLatitude) + minLatitude;
+    const longitude = Math.random() * (maxLongitude - minLongitude) + minLongitude;
+
+    return [latitude, longitude];
+};
+
+// Define a variable to store the Phenomenon instance globally
+let phenomenonInstance = null;
+
+// Function to update markers
+const updateMarkers = (markers) => {
+    if (phenomenonInstance) {
+        // Update the markers uniforms
+        phenomenonInstance.updateUniform(GLSLX_NAME_MARKERS, mapMarkers(markers));
+        phenomenonInstance.updateUniform(GLSLX_NAME_MARKERS_NUM, markers.length);
+        // Trigger rendering
+        phenomenonInstance.render();
+    }
+};
+
+// Export a function to initialize Phenomenon and return a reference for further updates
+export const initCobe = (canvas, opts) => {
+    // Initialize Phenomenon
+    phenomenonInstance = new Phenomenon({
+        canvas,
+        // Your existing configuration options...
+    });
+
+    // Add the globe
+    phenomenonInstance.add('', {
+        // Your existing configuration for the globe...
+    });
+
+    // Return the Phenomenon instance for further updates
+    return phenomenonInstance;
+};
+
+// Function to update markers real-time
+export const updateCobeMarkers = (markers) => {
+    // Call the updateMarkers function to update the markers
+    updateMarkers(markers);
+};
 
 export default (canvas, opts) => {
   const createUniform = (type, name, fallback) => {
